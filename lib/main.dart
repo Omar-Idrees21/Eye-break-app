@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -11,12 +10,7 @@ final notifications = FlutterLocalNotificationsPlugin();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tzdata.initializeTimeZones();
-  try {
-    final zone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(zone));
-  } catch (_) {
-    tz.setLocalLocation(tz.UTC);
-  }
+  tz.setLocalLocation(tz.UTC);
   const android = AndroidInitializationSettings('@mipmap/ic_launcher');
   await notifications.initialize(const InitializationSettings(android: android));
   runApp(const EyeBreakApp());

@@ -20,11 +20,34 @@ jobs:
           cache: true
       - name: Create Android project
         run: flutter create --platforms=android --project-name eye_break .
+      - name: Configure Android notifications
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle.kts')
+          s=p.read_text()
+          s=s.replace('compileSdk = flutter.compileSdkVersion','compileSdk = 35')
+          s=s.replace('compileOptions {','compileOptions {\n        isCoreLibraryDesugaringEnabled = true')
+          s += '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
+          p.write_text(s)
+          p=Path('android/app/src/main/AndroidManifest.xml')
+          s=p.read_text().replace('<application','<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>\n    <application',1)
+          s=s.replace('</application>','''<receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+              <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+                <intent-filter>
+                  <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                  <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                </intent-filter>
+              </receiver>
+            </application>''')
+          p.write_text(s)
+          PY
       - name: Install packages
         run: flutter pub get
       - name: Build APK
         run: flutter build apk --release
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: eye-break-apk
